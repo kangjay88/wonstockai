@@ -13,25 +13,29 @@
 -- ---------------------------------------------------------------------------
 -- 1. Per-table RLS + policy summary
 -- ---------------------------------------------------------------------------
-select
-  c.relname as table_name,
-  c.relrowsecurity as rls_enabled,
-  c.relforcerowsecurity as rls_forced,
-  count(p.policyname) as policy_count,
-  case
-    when not c.relrowsecurity then 'DANGER: RLS OFF'
-    when count(p.policyname) = 0 then 'WARN: RLS ON, NO POLICY'
-    else 'OK'
-  end as verdict
-from pg_class c
-join pg_namespace n on n.oid = c.relnamespace
-left join pg_policies p
-  on p.schemaname = n.nspname and p.tablename = c.relname
-where n.nspname = 'public'
-  and c.relkind = 'r'            -- ordinary tables only
-group by c.relname, c.relrowsecurity, c.relforcerowsecurity
-order by verdict <> 'OK' desc,   -- problems float to the top
-         c.relname;
+with summary as (
+  select
+    c.relname as table_name,
+    c.relrowsecurity as rls_enabled,
+    c.relforcerowsecurity as rls_forced,
+    count(p.policyname) as policy_count,
+    case
+      when not c.relrowsecurity then 'DANGER: RLS OFF'
+      when count(p.policyname) = 0 then 'WARN: RLS ON, NO POLICY'
+      else 'OK'
+    end as verdict
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  left join pg_policies p
+    on p.schemaname = n.nspname and p.tablename = c.relname
+  where n.nspname = 'public'
+    and c.relkind = 'r'            -- ordinary tables only
+  group by c.relname, c.relrowsecurity, c.relforcerowsecurity
+)
+select *
+from summary
+order by (verdict <> 'OK') desc,   -- problems float to the top
+         table_name;
 
 -- ---------------------------------------------------------------------------
 -- 2. Policy detail — confirm each policy gates on the owning user

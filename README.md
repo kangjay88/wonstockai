@@ -58,7 +58,9 @@ Building in phases per `docs/PLAN.md`; each phase ends deployable.
 
 - [x] **Phase 0 — Scaffold**: Next.js + Tailwind, Supabase clients, schema +
   RLS migration, email/password auth, protected layout, proxy session gate.
-- [ ] Phase 1 — Career memory
+- [x] **Phase 1 — Career memory**: PDF upload → unpdf text extraction → Haiku
+  parse → editable confirmation UI → persist `career_memory` + seed
+  `base_resumes` "Master resume" + harvest `voice_samples`.
 - [ ] Phase 2 — Resume builder + PDF export
 - [ ] Phase 3 — Scoring engine
 - [ ] Phase 4 — Applications + tailoring
