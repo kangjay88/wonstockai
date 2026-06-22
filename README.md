@@ -24,7 +24,7 @@ One-time manual steps (the app spends real API money — gate everything):
 
 1. **Supabase project** — create one at supabase.com.
    - Run the migration: paste `supabase/migrations/0001_init.sql` into the SQL
-     editor (or `supabase db push` with the CLI).
+     editor (or `supabase db push` with the CLI). 
    - Auth → Providers → enable Email. For a frictionless single-user setup you
      may disable email confirmation.
    - Create your single user (sign up via the app, or Auth → Users → Add user).
