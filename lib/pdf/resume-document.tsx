@@ -262,25 +262,4 @@ export function ResumeDocument({ sections }: { sections: ResumeSections }) {
   );
 }
 
-/** Produces a filename like "JayKang_Resume.pdf" from the contact name. */
-export function resumeFileName(
-  name: string,
-  companySuffix?: string
-): string {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .map((p) => p.replace(/[^A-Za-z0-9]/g, ""))
-    .filter(Boolean);
 
-  const base =
-    parts.length >= 2
-      ? `${parts[0]}${parts[parts.length - 1]}`
-      : parts[0] || "Resume";
-
-  const suffix = companySuffix
-    ? `_${companySuffix.replace(/[^A-Za-z0-9]/g, "")}`
-    : "";
-
-  return `${base}_Resume${suffix}.pdf`;
-}

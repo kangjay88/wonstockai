@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState, useTransition } from "react";
 
 import { ResumeSectionsEditor } from "@/components/resume-editor";
-import { ResumeDocument, resumeFileName } from "@/lib/pdf/resume-document";
+import { resumeFileName } from "@/lib/pdf/filename";
 import type { ResumeSections } from "@/lib/types";
 
 import { saveResume } from "./actions";
@@ -62,7 +62,11 @@ export function ResumeBuilder({
   }
 
   async function handleDownload() {
-    const { pdf } = await import("@react-pdf/renderer");
+    // Import react-pdf only in the browser, on demand — keeps it out of SSR.
+    const [{ pdf }, { ResumeDocument }] = await Promise.all([
+      import("@react-pdf/renderer"),
+      import("@/lib/pdf/resume-document"),
+    ]);
     const blob = await pdf(<ResumeDocument sections={sections} />).toBlob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

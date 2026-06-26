@@ -2,7 +2,8 @@
 //   npx tsx scripts/verify-pdf.tsx
 import { renderToBuffer } from "@react-pdf/renderer";
 
-import { ResumeDocument, resumeFileName } from "@/lib/pdf/resume-document";
+import { resumeFileName } from "@/lib/pdf/filename";
+import { ResumeDocument } from "@/lib/pdf/resume-document";
 import { resumeSectionsSchema } from "@/lib/types";
 
 const sample = resumeSectionsSchema.parse({
