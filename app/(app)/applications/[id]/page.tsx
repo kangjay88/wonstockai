@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { ScorePanel } from "@/app/(app)/resume/[id]/score-panel";
-import { scoreResume } from "@/lib/scoring";
 import { requireUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { ApplicationStatus } from "@/lib/supabase/types";
 import { jdExtractionSchema, resumeSectionsSchema } from "@/lib/types";
 
+import { ApplicationScore } from "./application-score";
 import { StatusSelect } from "./status-select";
 
 function ChipGroup({ label, items }: { label: string; items: string[] }) {
@@ -62,11 +61,7 @@ export default async function ApplicationPage({
     ? jdExtractionSchema.safeParse(app.jd_extraction)
     : null;
   const sections = resume ? resumeSectionsSchema.safeParse(resume.sections) : null;
-
-  const report =
-    sections?.success
-      ? scoreResume(sections.data, jd?.success ? jd.data : null)
-      : null;
+  const jdData = jd?.success ? jd.data : null;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -88,8 +83,12 @@ export default async function ApplicationPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Score */}
         <div className="space-y-4">
-          {report ? (
-            <ScorePanel report={report} />
+          {sections?.success ? (
+            <ApplicationScore
+              applicationId={app.id}
+              sections={sections.data}
+              jd={jdData}
+            />
           ) : (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
               No base resume found.{" "}

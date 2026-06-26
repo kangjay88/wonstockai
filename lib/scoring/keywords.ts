@@ -19,9 +19,17 @@ const SENIORITY_VERBS = [
 ];
 
 // B1 — required-skill coverage (50% of category) ------------------------------
-function requiredCoverage(jd: JdExtraction, corpus: string): CheckResult {
+function requiredCoverage(
+  jd: JdExtraction,
+  corpus: string,
+  semanticPresent: Set<string>
+): CheckResult {
   const req = jd.required_skills;
-  const missing = req.filter((s) => !skillPresent(s, corpus));
+  // A skill counts if it matches literally/by synonym, or the AI review judged
+  // the resume demonstrates it semantically.
+  const isPresent = (s: string) =>
+    skillPresent(s, corpus) || semanticPresent.has(s.toLowerCase());
+  const missing = req.filter((s) => !isPresent(s));
   const present = req.length - missing.length;
   const score = req.length ? (present / req.length) * 100 : 100;
   const each = req.length ? (100 / req.length) * 0.5 : 0;
@@ -251,12 +259,14 @@ function stuffingGuard(jd: JdExtraction, sections: ResumeSections, corpus: strin
 
 export function scoreKeywords(
   sections: ResumeSections,
-  jd: JdExtraction
+  jd: JdExtraction,
+  semanticPresent: string[] = []
 ): CheckResult[] {
   const corpus = resumeCorpus(sections);
   const bullets = bulletCorpus(sections);
+  const semantic = new Set(semanticPresent.map((s) => s.toLowerCase()));
   return [
-    requiredCoverage(jd, corpus),
+    requiredCoverage(jd, corpus, semantic),
     preferredCoverage(jd, corpus),
     placementQuality(jd, corpus, bullets),
     titleAlignment(jd, sections),

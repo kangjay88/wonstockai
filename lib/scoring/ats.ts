@@ -115,7 +115,9 @@ function lengthBudget(sections: ResumeSections, measuredPages?: number): CheckRe
   if (sections.skills.length)
     lines += 2 + Math.ceil(sections.skills.join(", ").length / 90);
 
-  const estPages = Math.max(1, Math.ceil(lines / 46));
+  // Prefer the exact rendered page count when supplied; else estimate.
+  const pages = measuredPages && measuredPages > 0 ? measuredPages : Math.max(1, Math.ceil(lines / 46));
+  const measured = Boolean(measuredPages && measuredPages > 0);
 
   // Budget: 1 page under ~10 yrs experience, hard max 2.
   const nowOrdinal = new Date().getFullYear() * 12 + new Date().getMonth();
@@ -131,7 +133,7 @@ function lengthBudget(sections: ResumeSections, measuredPages?: number): CheckRe
       ? (Math.max(...ends) - Math.min(...starts)) / 12
       : 0;
   const budget = years >= 10 ? 2 : 1;
-  const over = estPages > budget;
+  const over = pages > budget;
 
   return {
     id: "A7",
@@ -144,12 +146,12 @@ function lengthBudget(sections: ResumeSections, measuredPages?: number): CheckRe
       ? [
           {
             checkId: "A7",
-            message: `Estimated ${estPages} pages; trim to ${budget} (≈${years >= 10 ? "10+" : "<10"} yrs experience).`,
+            message: `${measured ? "" : "Estimated "}${pages} pages; trim to ${budget} (≈${years >= 10 ? "10+" : "<10"} yrs experience).`,
             cost: 15,
           },
         ]
       : [],
-    detail: `≈${estPages} page(s), budget ${budget}`,
+    detail: `${measured ? "" : "≈"}${pages} page(s), budget ${budget}`,
   };
 }
 
@@ -188,7 +190,10 @@ function noSpecialGlyphs(sections: ResumeSections): CheckResult {
   };
 }
 
-export function scoreAts(sections: ResumeSections): CheckResult[] {
+export function scoreAts(
+  sections: ResumeSections,
+  measuredPages?: number
+): CheckResult[] {
   return [
     info("A1", "Standard section headers", "Standard headers (guaranteed by the editor)"),
     contactComplete(sections),
@@ -196,7 +201,7 @@ export function scoreAts(sections: ResumeSections): CheckResult[] {
     reverseChronological(sections),
     info("A5", "Single column, no tables/images", "Single-column template"),
     info("A6", "Standard fonts", "Helvetica 10.5pt (template-enforced)"),
-    lengthBudget(sections),
+    lengthBudget(sections, measuredPages),
     noSpecialGlyphs(sections),
   ];
 }

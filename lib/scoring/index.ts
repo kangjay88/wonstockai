@@ -1,10 +1,17 @@
-import type { JdExtraction, ResumeSections } from "@/lib/types";
+import type { JdExtraction, ResumeSections, ReviewResult } from "@/lib/types";
 
 import { scoreAts } from "./ats";
 import { scoreImpact } from "./impact";
 import { scoreKeywords } from "./keywords";
 import { scoreLanguage } from "./language";
 import { buildCategory, type CategoryReport, type ScoreReport } from "./types";
+
+export interface ScoreOptions {
+  /** Exact rendered page count; overrides the line-estimate in A7. */
+  pageCount?: number;
+  /** On-demand AI review enabling C2/C3 rubric + semantic JD coverage. */
+  rubric?: ReviewResult | null;
+}
 
 /**
  * Scores a resume. With a JD, uses the full four-category weighting; without
@@ -19,7 +26,8 @@ import { buildCategory, type CategoryReport, type ScoreReport } from "./types";
  */
 export function scoreResume(
   sections: ResumeSections,
-  jd?: JdExtraction | null
+  jd?: JdExtraction | null,
+  opts: ScoreOptions = {}
 ): ScoreReport {
   const hasJD = Boolean(jd);
 
@@ -27,13 +35,13 @@ export function scoreResume(
     "ats",
     "ATS hygiene",
     hasJD ? 0.2 : 0.3,
-    scoreAts(sections)
+    scoreAts(sections, opts.pageCount)
   );
   const impact = buildCategory(
     "impact",
     "Impact & quantification",
     hasJD ? 0.25 : 0.4,
-    scoreImpact(sections)
+    scoreImpact(sections, opts.rubric)
   );
   const language = buildCategory(
     "language",
@@ -45,7 +53,12 @@ export function scoreResume(
   const categories: CategoryReport[] = [ats];
   if (hasJD && jd) {
     categories.push(
-      buildCategory("keywords", "Keyword & relevance match", 0.35, scoreKeywords(sections, jd))
+      buildCategory(
+        "keywords",
+        "Keyword & relevance match",
+        0.35,
+        scoreKeywords(sections, jd, opts.rubric?.skills_present ?? [])
+      )
     );
   }
   categories.push(impact, language);

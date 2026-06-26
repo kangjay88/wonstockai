@@ -22,6 +22,28 @@ const PdfPreview = dynamic(() => import("./pdf-preview"), {
 });
 
 const PREVIEW_DEBOUNCE_MS = 400;
+const PAGECOUNT_DEBOUNCE_MS = 900;
+
+/**
+ * Renders the resume to a PDF and counts its pages via pdf.js — the exact
+ * length feeding A7. All imports are dynamic so react-pdf never touches SSR.
+ * Returns undefined on any failure so the score falls back to the estimate.
+ */
+async function countPages(sections: ResumeSections): Promise<number | undefined> {
+  try {
+    const [{ pdf }, { ResumeDocument }, { getDocumentProxy }] = await Promise.all([
+      import("@react-pdf/renderer"),
+      import("@/lib/pdf/resume-document"),
+      import("unpdf"),
+    ]);
+    const blob = await pdf(<ResumeDocument sections={sections} />).toBlob();
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const doc = await getDocumentProxy(bytes);
+    return doc.numPages;
+  } catch {
+    return undefined;
+  }
+}
 
 export function ResumeBuilder({
   id,
@@ -43,13 +65,33 @@ export function ResumeBuilder({
   );
   const dirty = JSON.stringify(sections) !== savedSnapshot;
 
+  // Exact rendered page count (A7), measured off the main edit path.
+  const [pageCount, setPageCount] = useState<number | undefined>(undefined);
+
   // Live score — pure + cheap, recompute on every edit (no JD in the builder).
-  const report = useMemo(() => scoreResume(sections), [sections]);
+  const report = useMemo(
+    () => scoreResume(sections, undefined, { pageCount }),
+    [sections, pageCount]
+  );
 
   // Debounce preview re-renders so typing stays smooth.
   useEffect(() => {
     const t = setTimeout(() => setPreviewSections(sections), PREVIEW_DEBOUNCE_MS);
     return () => clearTimeout(t);
+  }, [sections]);
+
+  // Measure exact page count on a longer debounce (renders the PDF off-thread).
+  useEffect(() => {
+    let cancelled = false;
+    const t = setTimeout(() => {
+      countPages(sections).then((n) => {
+        if (!cancelled && n) setPageCount(n);
+      });
+    }, PAGECOUNT_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [sections]);
 
   function handleSave() {

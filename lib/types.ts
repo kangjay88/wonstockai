@@ -124,15 +124,21 @@ export type JdExtraction = z.infer<typeof jdExtractionSchema>;
 // rubric and semantic JD-coverage. Layered into the score via scoreResume opts.
 // ---------------------------------------------------------------------------
 
+/** Tolerates models that emit `null` (not just omit) for empty string fields. */
+const lenientString = z
+  .string()
+  .nullish()
+  .transform((v) => v ?? "");
+
 export const reviewBulletSchema = z.object({
-  role_index: z.number().int(),
-  bullet_index: z.number().int(),
+  role_index: z.coerce.number().int(),
+  bullet_index: z.coerce.number().int(),
   /** C2 — outcome vs duty, anchored 1–5. */
-  outcome_score: z.number().min(1).max(5),
-  outcome_note: z.string().default(""),
+  outcome_score: z.coerce.number().min(1).max(5).catch(3),
+  outcome_note: lenientString,
   /** C3 — Accomplished X, measured by Y, by doing Z. */
   xyz_complete: z.boolean().default(false),
-  missing_element: z.string().default(""),
+  missing_element: lenientString,
 });
 
 export const reviewResultSchema = z.object({
